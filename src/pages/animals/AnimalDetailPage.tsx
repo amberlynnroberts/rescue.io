@@ -22,28 +22,13 @@ export function AnimalDetailPage() {
   const { data: animal, isLoading } = useQuery({
     queryKey: ['animal', id],
     queryFn: async () => {
-      const { data: animalsData } = await supabase
+      const { data } = await supabase
         .from('animals')
         .select('*')
+        .eq('id', id!)
         .eq('org_id', org!.id)
-        .order('intake_date', { ascending: false })
-
-      if (!animalsData) return []
-
-      // Fetch primary photos separately
-      const animalIds = animalsData.map(a => a.id)
-      const { data: photos } = await supabase
-        .from('animal_photos')
-        .select('animal_id, url')
-        .in('animal_id', animalIds)
-        .eq('is_primary', true)
-
-      const photoMap = new Map(photos?.map(p => [p.animal_id, p.url]) ?? [])
-
-      return animalsData.map(a => ({
-        ...a,
-        primary_photo: photoMap.get(a.id) ?? null,
-      })) as Animal[]
+        .single()
+      return data as Animal | null
     },
     enabled: !!id && !!org?.id,
   })
@@ -51,7 +36,12 @@ export function AnimalDetailPage() {
   const { data: photos = [], refetch: refetchPhotos } = useQuery({
     queryKey: ['photos', id],
     queryFn: async () => {
-      const { data } = await supabase.from('animal_photos').select('*').eq('animal_id', id!).order('is_primary', { ascending: false }).order('created_at')
+      const { data } = await supabase
+        .from('animal_photos')
+        .select('*')
+        .eq('animal_id', id!)
+        .order('is_primary', { ascending: false })
+        .order('created_at')
       return (data ?? []) as AnimalPhoto[]
     },
     enabled: !!id,
@@ -60,16 +50,25 @@ export function AnimalDetailPage() {
   const { data: observations = [] } = useQuery({
     queryKey: ['observations', id],
     queryFn: async () => {
-      const { data } = await supabase.from('daily_observations').select('*, profiles(full_name)').eq('animal_id', id!).order('observed_at', { ascending: false }).limit(30)
+      const { data } = await supabase
+        .from('daily_observations')
+        .select('*, profiles(full_name)')
+        .eq('animal_id', id!)
+        .order('observed_at', { ascending: false })
+        .limit(30)
       return (data ?? []) as DailyObservation[]
     },
-    enabled: !!id && (tab === 'observations'),
+    enabled: !!id && tab === 'observations',
   })
 
   const { data: medicalRecords = [] } = useQuery({
     queryKey: ['medical', id],
     queryFn: async () => {
-      const { data } = await supabase.from('medical_records').select('*').eq('animal_id', id!).order('date', { ascending: false })
+      const { data } = await supabase
+        .from('medical_records')
+        .select('*')
+        .eq('animal_id', id!)
+        .order('date', { ascending: false })
       return (data ?? []) as MedicalRecord[]
     },
     enabled: !!id && tab === 'medical',
@@ -78,7 +77,11 @@ export function AnimalDetailPage() {
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', id],
     queryFn: async () => {
-      const { data } = await supabase.from('medications').select('*').eq('animal_id', id!).order('active', { ascending: false })
+      const { data } = await supabase
+        .from('medications')
+        .select('*')
+        .eq('animal_id', id!)
+        .order('active', { ascending: false })
       return (data ?? []) as Medication[]
     },
     enabled: !!id && tab === 'medications',
@@ -103,12 +106,26 @@ export function AnimalDetailPage() {
 
   const primaryPhoto = photos.find(p => p.is_primary)?.url ?? photos[0]?.url
 
-  if (isLoading) return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" /></div>
-  if (!animal) return <div className="text-center py-20"><p className="text-gray-500">Animal not found.</p><Link to="/animals" className="text-teal-600 hover:underline text-sm mt-2 block">Back</Link></div>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!animal) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-gray-500">Animal not found.</p>
+        <Link to="/animals" className="text-teal-600 hover:underline text-sm mt-2 block">Back</Link>
+      </div>
+    )
+  }
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'overview', label: 'Overview', icon: PawPrint },
-    { id: 'photos', label: `Photos ${photos.length > 0 ? `(${photos.length})` : ''}`, icon: Camera },
+    { id: 'photos', label: `Photos${photos.length > 0 ? ` (${photos.length})` : ''}`, icon: Camera },
     { id: 'observations', label: 'Observations', icon: ClipboardList },
     { id: 'medical', label: 'Medical', icon: Stethoscope },
     { id: 'medications', label: 'Medications', icon: FileText },
@@ -118,7 +135,9 @@ export function AnimalDetailPage() {
     <div>
       {/* Header */}
       <div className="flex items-start gap-3 mb-6">
-        <button onClick={() => navigate(-1)} className="btn-ghost px-2 mt-0.5"><ChevronLeft size={18} /></button>
+        <button onClick={() => navigate(-1)} className="btn-ghost px-2 mt-0.5">
+          <ChevronLeft size={18} />
+        </button>
         <div className="flex gap-4 flex-1">
           {primaryPhoto && (
             <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 hidden sm:block">
@@ -131,12 +150,13 @@ export function AnimalDetailPage() {
               <span className={`status-${animal.status}`}>{animal.status?.replace('_', ' ') ?? ''}</span>
             </div>
             <p className="text-sm text-gray-500 mt-0.5 capitalize">
-              {animal.species}{animal.breed ? ` · ${animal.breed}` : ''}{animal.sex !== 'unknown' ? ` · ${animal.sex}` : ''}{animal.location ? ` · ${animal.location}` : ''}
+              {animal.species}
+              {animal.breed ? ` · ${animal.breed}` : ''}
+              {animal.sex !== 'unknown' ? ` · ${animal.sex}` : ''}
+              {animal.location ? ` · ${animal.location}` : ''}
             </p>
           </div>
         </div>
-        {/* Quick photo upload button always visible */}
-        <h1>Hello</h1>
         <PhotoUpload animalId={animal.id} onUploaded={refetchPhotos} compact />
       </div>
 
@@ -144,9 +164,16 @@ export function AnimalDetailPage() {
       <div className="card mb-5 p-4">
         <p className="section-title">Update status</p>
         <div className="flex flex-wrap gap-2">
-          {(['available','hold','medical','quarantine','fostered','transferred','adopted'] as const).map(s => (
-            <button key={s} onClick={() => updateStatus(s)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${animal.status === s ? 'bg-teal-400 text-white border-teal-400' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+          {(['available', 'hold', 'medical', 'quarantine', 'fostered', 'transferred', 'adopted'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => updateStatus(s)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                animal.status === s
+                  ? 'bg-teal-400 text-white border-teal-400'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+              }`}
+            >
               {s.replace('_', ' ')}
             </button>
           ))}
@@ -156,8 +183,13 @@ export function AnimalDetailPage() {
       {/* Tabs */}
       <div className="flex gap-0.5 mb-5 border-b border-gray-100 overflow-x-auto">
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${tab === t.id ? 'border-teal-400 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+              tab === t.id ? 'border-teal-400 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
             <t.icon size={14} />{t.label}
           </button>
         ))}
@@ -171,7 +203,12 @@ export function AnimalDetailPage() {
             <Row label="Species" value={animal.species} />
             <Row label="Breed" value={animal.breed} />
             <Row label="Sex" value={animal.sex} />
-            <Row label="Age" value={[animal.age_years && `${animal.age_years}y`, animal.age_months && `${animal.age_months}m`].filter(Boolean).join(' ') || null} />
+            <Row label="Age" value={
+              [
+                animal.age_years ? `${animal.age_years}y` : null,
+                animal.age_months ? `${animal.age_months}m` : null
+              ].filter(Boolean).join(' ') || null
+            } />
             <Row label="Weight" value={animal.weight_lbs ? `${animal.weight_lbs} lbs` : null} />
             <Row label="Color" value={animal.color} />
             <Row label="Altered" value={animal.altered ? 'Yes' : 'No'} />
@@ -183,7 +220,12 @@ export function AnimalDetailPage() {
             <Row label="Type" value={animal.intake_type?.replace('_', ' ')} />
             <Row label="Date" value={animal.intake_date ? new Date(animal.intake_date).toLocaleDateString() : null} />
             <Row label="Location" value={animal.location} />
-            {animal.intake_notes && <div className="pt-2"><p className="text-xs text-gray-400 mb-1">Notes</p><p className="text-sm text-gray-700">{animal.intake_notes}</p></div>}
+            {animal.intake_notes && (
+              <div className="pt-2">
+                <p className="text-xs text-gray-400 mb-1">Notes</p>
+                <p className="text-sm text-gray-700">{animal.intake_notes}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -202,14 +244,18 @@ export function AnimalDetailPage() {
           {!showObsForm ? (
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">{observations.length} recorded</p>
-              <button onClick={() => setShowObsForm(true)} className="btn-primary">+ Complete observation</button>
+              <button onClick={() => setShowObsForm(true)} className="btn-primary">
+                + Complete observation
+              </button>
             </div>
           ) : (
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-gray-900">New observation</h2>
-              </div>
-              <ObservationForm animalId={animal.id} onSaved={() => setShowObsForm(false)} onCancel={() => setShowObsForm(false)} />
+              <h2 className="font-semibold text-gray-900 mb-4">New observation</h2>
+              <ObservationForm
+                animalId={animal.id}
+                onSaved={() => setShowObsForm(false)}
+                onCancel={() => setShowObsForm(false)}
+              />
             </div>
           )}
 
@@ -236,7 +282,10 @@ export function AnimalDetailPage() {
             <button className="btn-primary">+ Add record</button>
           </div>
           {medicalRecords.length === 0 ? (
-            <div className="card text-center py-12 text-gray-400"><Stethoscope size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No medical records yet.</p></div>
+            <div className="card text-center py-12 text-gray-400">
+              <Stethoscope size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No medical records yet.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {medicalRecords.map(r => (
@@ -245,7 +294,9 @@ export function AnimalDetailPage() {
                     <p className="font-medium text-gray-900">{r.title}</p>
                     {r.cost != null && <span className="text-sm text-gray-500">${r.cost}</span>}
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5 capitalize">{r.type.replace('_', ' ')} · {new Date(r.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                    {r.type.replace('_', ' ')} · {new Date(r.date).toLocaleDateString()}
+                  </p>
                   {r.notes && <p className="text-sm text-gray-600 mt-2">{r.notes}</p>}
                 </div>
               ))}
@@ -262,14 +313,19 @@ export function AnimalDetailPage() {
             <button className="btn-primary">+ Add medication</button>
           </div>
           {medications.length === 0 ? (
-            <div className="card text-center py-12 text-gray-400"><FileText size={32} className="mx-auto mb-2 opacity-30" /><p className="text-sm">No medications on record.</p></div>
+            <div className="card text-center py-12 text-gray-400">
+              <FileText size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No medications on record.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {medications.map(m => (
                 <div key={m.id} className="card">
                   <div className="flex justify-between">
                     <p className="font-medium text-gray-900">{m.name}</p>
-                    <span className={m.active ? 'badge bg-teal-50 text-teal-800' : 'badge bg-gray-100 text-gray-500'}>{m.active ? 'Active' : 'Inactive'}</span>
+                    <span className={m.active ? 'badge bg-teal-50 text-teal-800' : 'badge bg-gray-100 text-gray-500'}>
+                      {m.active ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">{m.dosage && `${m.dosage} · `}{m.frequency}</p>
                   {m.instructions && <p className="text-sm text-gray-600 mt-2">{m.instructions}</p>}
@@ -287,7 +343,9 @@ function Row({ label, value }: { label: string; value: string | null | undefined
   return (
     <div className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
       <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-800 capitalize">{value ?? <span className="text-gray-300">—</span>}</span>
+      <span className="text-sm font-medium text-gray-800 capitalize">
+        {value ?? <span className="text-gray-300">—</span>}
+      </span>
     </div>
   )
 }
@@ -312,7 +370,9 @@ function ObservationCard({ obs }: { obs: DailyObservation }) {
             {format(new Date(obs.observed_at), 'MMM d, yyyy h:mm a')}
           </p>
           {(obs as DailyObservation & { profiles?: { full_name: string } }).profiles?.full_name && (
-            <p className="text-xs text-gray-400">{(obs as DailyObservation & { profiles?: { full_name: string } }).profiles?.full_name}</p>
+            <p className="text-xs text-gray-400">
+              {(obs as DailyObservation & { profiles?: { full_name: string } }).profiles?.full_name}
+            </p>
           )}
         </div>
         {hasFlag && (
@@ -324,7 +384,9 @@ function ObservationCard({ obs }: { obs: DailyObservation }) {
 
       {concerns.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
-          {concerns.map(c => <span key={c} className="badge bg-amber-100 text-amber-700">{c}</span>)}
+          {concerns.map(c => (
+            <span key={c} className="badge bg-amber-100 text-amber-700">{c}</span>
+          ))}
         </div>
       )}
 
@@ -333,7 +395,9 @@ function ObservationCard({ obs }: { obs: DailyObservation }) {
         {obs.weight_lbs && <span>Weight: {obs.weight_lbs} lbs</span>}
       </div>
 
-      {obs.notes && <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-100">{obs.notes}</p>}
+      {obs.notes && (
+        <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-100">{obs.notes}</p>
+      )}
     </div>
   )
 }

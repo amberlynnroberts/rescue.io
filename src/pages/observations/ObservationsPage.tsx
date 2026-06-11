@@ -157,7 +157,7 @@ export function ObservationsPage() {
 }
 
 function AnimalRow({ animal, done, obs, onSelect, isSelected }: {
-  animal: Animal & { primary_photo?: string }
+  animal: Animal & { primary_photo?: string | null }
   done: boolean
   obs: Partial<DailyObservation> | null
   onSelect: () => void
