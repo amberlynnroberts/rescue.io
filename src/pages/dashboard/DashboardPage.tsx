@@ -54,7 +54,11 @@ export function DashboardPage() {
   const { data: activeQuarantine = 0 } = useQuery({
     queryKey: ['active-quarantine', org?.id],
     queryFn: async () => {
-      const { count } = await supabase.from('quarantine_cases').select('*', { count: 'exact', head: true }).eq('org_id', org!.id).eq('status', 'active')
+      const { count } = await supabase
+        .from('animals')
+        .select('*', { count: 'exact', head: true })
+        .eq('org_id', org!.id)
+        .eq('status', 'quarantine')
       return count ?? 0
     },
     enabled: !!org?.id,
@@ -135,7 +139,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Animals in care" value={animals.length} icon={PawPrint} color="teal" />
         <StatCard label="Available" value={available} icon={Heart} color="gray" />
-        <StatCard label="Pending adoptions" value={pendingAdoptions} icon={Heart} color="amber" />
+        {/* <StatCard label="Pending adoptions" value={pendingAdoptions} icon={Heart} color="amber" /> */}
         <StatCard label="In quarantine" value={activeQuarantine} icon={ShieldAlert} color="orange" />
       </div>
 

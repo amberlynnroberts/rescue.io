@@ -7,13 +7,12 @@ import { Plus, Search, PawPrint } from 'lucide-react'
 import type { Animal, AnimalStatus } from '@/types'
 
 const STATUS_FILTERS: { label: string; value: AnimalStatus | 'all' }[] = [
-  { label: 'All', value: 'all' },
+  { label: 'All active', value: 'all' },
   { label: 'Available', value: 'available' },
   { label: 'Medical', value: 'medical' },
   { label: 'Hold', value: 'hold' },
   { label: 'Quarantine', value: 'quarantine' },
   { label: 'Fostered', value: 'fostered' },
-  { label: 'Adopted', value: 'adopted' },
 ]
 
 export function AnimalsPage() {
@@ -35,6 +34,7 @@ export function AnimalsPage() {
           )
         `)
         .eq('org_id', org!.id)
+        .not('status', 'in', '("adopted","transferred","deceased")')
         .order('intake_date', { ascending: false })
         .limit(100)
 

@@ -9,7 +9,30 @@ const CORS = {
 
 function mapAnimal(a: Record<string, unknown>, orgId: string) {
   const speciesMap: Record<string, string> = { 'Dog':'dog','Cat':'cat','Rabbit':'rabbit','Bird':'bird','Reptile':'reptile','Small Animal':'small_animal','Guinea Pig':'small_animal' }
-  const statusMap: Record<string, string> = { 'Available':'available','Adoptable':'available','Adopted':'adopted','Foster':'fostered','Hold':'hold','Medical Hold':'medical','Transferred':'transferred','Transferred Out':'transferred','Deceased':'deceased','Stray Hold':'stray_hold' }
+const statusMap: Record<string, string> = {
+  // Standard
+  'Available': 'available',
+  'Adoptable': 'available',
+  'Adopted': 'adopted',
+  'Deceased': 'deceased',
+  'Transferred': 'transferred',
+  'Transferred Out': 'transferred',
+  'Returned to Owner': 'transferred',
+  'Hold': 'hold',
+  'Medical Hold': 'medical',
+  'Stray Hold': 'stray_hold',
+  // Foster
+  'Foster': 'fostered',
+  'Foster Home': 'fostered',
+  'In Foster Home': 'fostered',
+  'Available Foster': 'fostered',
+  'Unavailable Foster': 'fostered',
+  // HBCM specific
+  'Healthy In Home': 'adopted',
+  'Quarantine - HBCM - not available': 'quarantine',
+  'Cat Lounge - HBCM - Available': 'available',
+  'Released to Colony / Wild': 'adopted',
+}
   const intakeMap: Record<string, string> = { 'Stray':'stray','Owner Surrender':'owner_surrender','Transfer':'transfer','Born In Care':'born_in_care' }
 
   // Dates are Unix timestamps
