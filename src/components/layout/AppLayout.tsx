@@ -32,7 +32,7 @@ export function AppLayout() {
         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono font-semibold text-sm bg-teal-400 text-gray-900">
           S
         </div>
-        <span className="font-mono font-medium text-white text-sm">ShelterIQ</span>
+        <span className="font-mono font-medium text-white text-sm">Rescue-IO</span>
       </div>
 
       {/* Org */}
@@ -144,7 +144,7 @@ export function AppLayout() {
           <button onClick={() => setMobileOpen(true)}>
             <Menu size={22} className="text-gray-600" />
           </button>
-          <span className="font-mono font-medium text-sm text-gray-900">ShelterIQ</span>
+          <span className="font-mono font-medium text-sm text-gray-900">Rescue-IO</span>
           <div className="w-6" />
         </div>
 
