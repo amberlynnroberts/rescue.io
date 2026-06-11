@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { ClipboardList, CheckCircle, AlertTriangle, PawPrint, ChevronRight, X } from 'lucide-react'
 import { ObservationForm } from '@/components/animals/ObservationForm'
 import type { Animal, DailyObservation } from '@/types'
-import { format, isToday } from 'date-fns'
+import { format } from 'date-fns'
 
 export function ObservationsPage() {
   const { org } = useAuth()
@@ -18,15 +18,15 @@ export function ObservationsPage() {
     queryKey: ['animals', org?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('animals')
+        .from('shelteriq_animals')
         .select('*, animal_photos(url, is_primary)')
         .eq('org_id', org!.id)
         .not('status', 'in', '("adopted","transferred","deceased")')
         .order('name')
-      return (data ?? []).map((a: Animal & { animal_photos: {url:string;is_primary:boolean}[] }) => ({
+      return (data ?? []).map((a: Animal & { animal_photos: { url: string; is_primary: boolean }[] }) => ({
         ...a,
         primary_photo: a.animal_photos?.find(p => p.is_primary)?.url ?? a.animal_photos?.[0]?.url ?? null,
-      })) as Animal[]
+      })) as (Animal & { primary_photo: string | null })[]
     },
     enabled: !!org?.id,
   })
@@ -48,18 +48,15 @@ export function ObservationsPage() {
   const done = animals.filter(a => obsMap.has(a.id))
   const pending = animals.filter(a => !obsMap.has(a.id))
   const flagged = todayObs.filter(o => o.flag_for_vet)
-
   const pct = animals.length > 0 ? Math.round((done.length / animals.length) * 100) : 0
 
   return (
     <div className="max-w-2xl">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="page-title">Daily Rounds</h1>
         <p className="text-sm text-gray-500 mt-0.5">{format(new Date(), 'EEEE, MMMM d')}</p>
       </div>
 
-      {/* Progress */}
       <div className="card mb-6">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -79,14 +76,13 @@ export function ObservationsPage() {
         )}
       </div>
 
-      {/* Inline form */}
       {selectedAnimal && (
         <div className="card mb-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              {(selectedAnimal as Animal & { primary_photo?: string }).primary_photo && (
+              {(selectedAnimal as Animal & { primary_photo?: string | null }).primary_photo && (
                 <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={(selectedAnimal as Animal & { primary_photo?: string }).primary_photo!} alt="" className="w-full h-full object-cover" />
+                  <img src={(selectedAnimal as Animal & { primary_photo?: string | null }).primary_photo!} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
               <div>
@@ -107,7 +103,6 @@ export function ObservationsPage() {
         </div>
       )}
 
-      {/* Pending */}
       {pending.length > 0 && (
         <div className="mb-6">
           <p className="section-title">Needs observation ({pending.length})</p>
@@ -126,7 +121,6 @@ export function ObservationsPage() {
         </div>
       )}
 
-      {/* Done */}
       {done.length > 0 && (
         <div>
           <p className="section-title">Completed ({done.length})</p>
@@ -167,9 +161,12 @@ function AnimalRow({ animal, done, obs, onSelect, isSelected }: {
   const hasConcern = obs && (obs.appetite !== 'good' || obs.vomiting || obs.coughing || obs.behavior !== 'normal')
 
   return (
-    <div className={`card p-3 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'border-teal-400 bg-teal-50/30' : hasConcern ? 'border-amber-200' : 'hover:border-gray-200'}`}
-      onClick={onSelect}>
-      {/* Photo */}
+    <div
+      className={`card p-3 flex items-center gap-3 cursor-pointer transition-colors ${
+        isSelected ? 'border-teal-400 bg-teal-50/30' : hasConcern ? 'border-amber-200' : 'hover:border-gray-200'
+      }`}
+      onClick={onSelect}
+    >
       <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
         {animal.primary_photo
           ? <img src={animal.primary_photo} alt="" className="w-full h-full object-cover" />
@@ -177,20 +174,18 @@ function AnimalRow({ animal, done, obs, onSelect, isSelected }: {
         }
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-900 truncate">{animal.name ?? 'Unnamed'}</p>
         <p className="text-xs text-gray-400 capitalize">{animal.species}{animal.location ? ` · ${animal.location}` : ''}</p>
         {done && obs && (
           <div className="flex gap-1.5 mt-1 flex-wrap">
             {hasConcern && <span className="badge bg-amber-100 text-amber-700 text-xs">Concerns noted</span>}
-            {hasFlag && <span className="badge bg-coral-50 text-coral-400 text-xs flex items-center gap-0.5"><AlertTriangle size={9} />Vet flagged</span>}
+            {hasFlag && <span className="badge bg-red-50 text-red-400 text-xs flex items-center gap-0.5"><AlertTriangle size={9} />Vet flagged</span>}
             {!hasConcern && !hasFlag && <span className="badge bg-teal-50 text-teal-700 text-xs">All clear</span>}
           </div>
         )}
       </div>
 
-      {/* Status */}
       {done
         ? <CheckCircle size={20} className="text-teal-400 flex-shrink-0" />
         : <ChevronRight size={18} className="text-gray-300 flex-shrink-0" />

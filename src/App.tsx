@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
-import { ModeProvider } from '@/context/ModeContext'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SignupPage } from '@/pages/auth/SignupPage'
@@ -10,9 +9,6 @@ import { AnimalsPage } from '@/pages/animals/AnimalsPage'
 import { AnimalDetailPage } from '@/pages/animals/AnimalDetailPage'
 import { NewAnimalPage } from '@/pages/animals/NewAnimalPage'
 import { AdoptionsPage } from '@/pages/adoptions/AdoptionsPage'
-import { QuarantinePage } from '@/pages/quarantine/QuarantinePage'
-import { QuarantineDetailPage } from '@/pages/quarantine/QuarantineDetailPage'
-import { ObservationsPage } from '@/pages/observations/ObservationsPage'
 import { ShelterLuvImportPage } from '@/pages/import/ShelterLuvImportPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 
@@ -52,9 +48,6 @@ function AppRoutes() {
         <Route path="animals/new" element={<NewAnimalPage />} />
         <Route path="animals/:id" element={<AnimalDetailPage />} />
         <Route path="adoptions" element={<AdoptionsPage />} />
-        <Route path="observations" element={<ObservationsPage />} />
-        <Route path="quarantine" element={<QuarantinePage />} />
-        <Route path="quarantine/:id" element={<QuarantineDetailPage />} />
         <Route path="import/shelterluv" element={<ShelterLuvImportPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
@@ -67,9 +60,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ModeProvider>
-          <AppRoutes />
-        </ModeProvider>
+        <AppRoutes />
       </AuthProvider>
     </BrowserRouter>
   )

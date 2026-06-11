@@ -19,13 +19,13 @@ export function AnimalsPage() {
   const { org } = useAuth()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<AnimalStatus | 'all'>('all')
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
   const { data: animals = [], isLoading } = useQuery({
     queryKey: ['animals', org?.id],
+    staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase
-        .from('animals')
+        .from('shelteriq_animals')
         .select(`
           *,
           animal_photos (

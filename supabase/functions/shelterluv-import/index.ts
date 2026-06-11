@@ -9,33 +9,31 @@ const CORS = {
 
 function mapAnimal(a: Record<string, unknown>, orgId: string) {
   const speciesMap: Record<string, string> = { 'Dog':'dog','Cat':'cat','Rabbit':'rabbit','Bird':'bird','Reptile':'reptile','Small Animal':'small_animal','Guinea Pig':'small_animal' }
-const statusMap: Record<string, string> = {
-  // Standard
-  'Available': 'available',
-  'Adoptable': 'available',
-  'Adopted': 'adopted',
-  'Deceased': 'deceased',
-  'Transferred': 'transferred',
-  'Transferred Out': 'transferred',
-  'Returned to Owner': 'transferred',
-  'Hold': 'hold',
-  'Medical Hold': 'medical',
-  'Stray Hold': 'stray_hold',
-  // Foster
-  'Foster': 'fostered',
-  'Foster Home': 'fostered',
-  'In Foster Home': 'fostered',
-  'Available Foster': 'fostered',
-  'Unavailable Foster': 'fostered',
-  // HBCM specific
-  'Healthy In Home': 'adopted',
-  'Quarantine - HBCM - not available': 'quarantine',
-  'Cat Lounge - HBCM - Available': 'available',
-  'Released to Colony / Wild': 'adopted',
-}
+  const statusMap: Record<string, string> = {
+    'Available': 'available',
+    'Adoptable': 'available',
+    'Adopted': 'adopted',
+    'Deceased': 'deceased',
+    'Transferred': 'transferred',
+    'Transferred Out': 'transferred',
+    'Returned to Owner': 'transferred',
+    'Hold': 'hold',
+    'Medical Hold': 'medical',
+    'Stray Hold': 'stray_hold',
+    'Foster': 'fostered',
+    'Foster Home': 'fostered',
+    'In Foster Home': 'fostered',
+    'Available Foster': 'fostered',
+    'Unavailable Foster': 'fostered',
+    'Healthy In Home': 'adopted',
+    'Quarantine - HBCM - not available': 'quarantine',
+    'Cat Lounge - HBCM - Available': 'available',
+    'Released to Colony': 'adopted',
+    'Released to Wild': 'adopted',
+    'Released to Colony / Wild': 'adopted',
+  }
   const intakeMap: Record<string, string> = { 'Stray':'stray','Owner Surrender':'owner_surrender','Transfer':'transfer','Born In Care':'born_in_care' }
 
-  // Dates are Unix timestamps
   let intakeDate = new Date().toISOString().split('T')[0]
   const rawDate = a['LastIntakeUnixTime']
   if (rawDate) {
@@ -43,20 +41,16 @@ const statusMap: Record<string, string> = {
     if (!isNaN(d.getTime())) intakeDate = d.toISOString().split('T')[0]
   }
 
-  // Photos: use Photos array first, fall back to CoverPhoto
-  // Skip default placeholder images
   const DEFAULT_PHOTOS = ['default_cat.png', 'default_dog.png', 'default_animal.png']
   const rawPhotos = (a['Photos'] as Array<Record<string, string>>) ?? []
   let photoUrls = rawPhotos.map(p => p.large ?? p.Large ?? p.URL ?? p.url).filter(Boolean) as string[]
-  
-  // Fall back to CoverPhoto if no Photos and it's not a default
+
   if (photoUrls.length === 0 && a['CoverPhoto']) {
     const cover = a['CoverPhoto'] as string
     const isDefault = DEFAULT_PHOTOS.some(d => cover.includes(d))
     if (!isDefault) photoUrls = [cover]
   }
 
-  // DOB from Unix timestamp
   let dob = null
   if (a['DOBUnixTime']) {
     const d = new Date((a['DOBUnixTime'] as number) * 1000)
@@ -74,6 +68,7 @@ const statusMap: Record<string, string> = {
     dob,
     microchip_id: ((a['Microchips'] as Array<{Number:string}>)?.[0]?.Number) || null,
     shelter_id: (a['Internal-ID'] as string)?.toString() || null,
+    shelterluv_id: (a['Internal-ID'] as string)?.toString() || null,
     altered: (a['Altered'] as string) === 'Yes',
     location: (a['CurrentLocation'] as Record<string,string>)?.Name || null,
     status: statusMap[a['Status'] as string] ?? 'available',
@@ -116,15 +111,15 @@ serve(async (req) => {
     const mapped = allAnimals.map(a => mapAnimal(a, orgId))
     const adminClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    // Clear existing imported animals
-    await adminClient.from('animals').delete().eq('org_id', orgId).not('shelter_id', 'is', null)
+    // Clear existing imported animals from ShelterIQ_animals
+    await adminClient.from('shelteriq_animals').delete().eq('org_id', orgId).not('shelter_id', 'is', null)
 
     let imported = 0
     const errors: string[] = []
 
     for (let i = 0; i < mapped.length; i += 50) {
       const batch = mapped.slice(i, i + 50)
-      const { data: inserted, error } = await adminClient.from('animals').insert(batch.map(m => m.animal)).select('id, shelter_id')
+      const { data: inserted, error } = await adminClient.from('shelteriq_animals').insert(batch.map(m => m.animal)).select('id, shelter_id')
       if (error) { errors.push(error.message); continue }
       imported += inserted.length
 

@@ -1,17 +1,15 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { useMode } from '@/context/ModeContext'
 import {
-  LayoutDashboard, PawPrint, Heart, ShieldAlert,
-  Settings, LogOut, Menu, Upload, ClipboardList,
-  ShieldCheck, ChevronRight
+  LayoutDashboard, PawPrint, Heart,
+  Settings, LogOut, Menu, Upload, ShieldAlert
 } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
 
+
 export function AppLayout() {
   const { org, profile, membership, signOut } = useAuth()
-  const { quarantineMode, toggleQuarantineMode } = useMode()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -21,49 +19,26 @@ export function AppLayout() {
     navigate('/login')
   }
 
-  const shelterNav = [
-    { to: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
-    { to: '/animals',    label: 'Animals',     icon: PawPrint },
-    { to: '/adoptions',  label: 'Adoptions',   icon: Heart },
-    { to: '/observations', label: 'Daily Rounds', icon: ClipboardList },
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/animals',   label: 'Animals',   icon: PawPrint },
+    { to: '/adoptions', label: 'Adoptions', icon: Heart },
   ]
-
-  const quarantineNav = [
-    { to: '/quarantine', label: 'Active Cases',  icon: ShieldAlert },
-    { to: '/animals',    label: 'All Animals',   icon: PawPrint },
-    { to: '/observations', label: 'Daily Rounds', icon: ClipboardList },
-  ]
-
-  const navItems = quarantineMode ? quarantineNav : shelterNav
-
-  const accentColor = quarantineMode ? 'text-orange-400' : 'text-teal-400'
-  const accentBg = quarantineMode ? 'bg-orange-400' : 'bg-teal-400'
-  const activeBg = quarantineMode ? 'bg-orange-400/10 text-orange-300' : 'bg-teal-400/10 text-teal-300'
 
   const sidebar = (
-    <aside className={clsx(
-      'flex flex-col w-64 h-full text-white transition-colors duration-300',
-      quarantineMode ? 'bg-orange-950' : 'bg-gray-900'
-    )}>
+    <aside className="flex flex-col w-64 h-full text-white bg-gray-900">
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10">
-        <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center font-mono font-semibold text-sm', accentBg, 'text-gray-900')}>
-          {quarantineMode ? 'Q' : 'S'}
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-mono font-semibold text-sm bg-teal-400 text-gray-900">
+          S
         </div>
-        <div>
-          <span className="font-mono font-medium text-white text-sm">
-            {quarantineMode ? 'QuarantineIQ' : 'Rescue.IO'}
-          </span>
-          {quarantineMode && (
-            <div className="text-xs text-orange-300 font-medium">Quarantine Mode</div>
-          )}
-        </div>
+        <span className="font-mono font-medium text-white text-sm">ShelterIQ</span>
       </div>
 
       {/* Org */}
       <div className="px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-          <div className={clsx('w-7 h-7 rounded flex items-center justify-center text-xs font-semibold flex-shrink-0', quarantineMode ? 'bg-orange-900 text-orange-200' : 'bg-teal-800 text-teal-100')}>
+          <div className="w-7 h-7 rounded flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-teal-800 text-teal-100">
             {org?.name?.[0]?.toUpperCase() ?? 'O'}
           </div>
           <div className="flex-1 min-w-0">
@@ -75,60 +50,41 @@ export function AppLayout() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {quarantineMode && (
-          <div className="section-title px-3 text-orange-400/60">Quarantine</div>
-        )}
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
-            key={to + label}
+            key={to}
             to={to}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) => clsx(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              isActive ? activeBg : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              isActive ? 'bg-teal-400/10 text-teal-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'
             )}
           >
             <Icon size={18} />
             {label}
           </NavLink>
         ))}
+        </nav>
 
-        {!quarantineMode && (
-          <>
-            <div className="pt-2 section-title px-3">Tools</div>
-            <NavLink
-              to="/import/shelterluv"
-              onClick={() => setMobileOpen(false)}
-              className={({ isActive }) => clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                isActive ? activeBg : 'text-gray-400 hover:bg-white/5 hover:text-white'
-              )}
-            >
-              <Upload size={18} />
-              Import from ShelterLuv
-            </NavLink>
-          </>
+      <div className="pt-2 section-title px-3">Tools</div>
+      <NavLink
+        to="/import/shelterluv"
+        onClick={() => setMobileOpen(false)}
+        className={({ isActive }) => clsx(
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+          isActive ? 'bg-teal-400/10 text-teal-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'
         )}
-      </nav>
-
-      {/* Quarantine mode toggle */}
-      <div className="px-3 pb-3 border-t border-white/10 pt-3">
-        <button
-          onClick={toggleQuarantineMode}
-          className={clsx(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-            quarantineMode
-              ? 'bg-orange-400/20 text-orange-300 hover:bg-orange-400/30'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
-          )}
-        >
-          {quarantineMode ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
-          <span className="flex-1 text-left">
-            {quarantineMode ? 'Exit Quarantine Mode' : 'Quarantine Mode'}
-          </span>
-          <ChevronRight size={14} className={clsx('transition-transform', quarantineMode && 'rotate-180')} />
-        </button>
-      </div>
+      >
+        <Upload size={18} />
+        Import from ShelterLuv
+      </NavLink>
+      <button
+        onClick={() => window.open('https://binx-q.vercel.app', '_blank')}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 mt-1"
+      >
+        <ShieldAlert size={18} />
+        Quarantine Mode ↗
+      </button>
 
       {/* Bottom */}
       <div className="px-3 pb-4 border-t border-white/10 pt-3 space-y-0.5">
@@ -137,7 +93,7 @@ export function AppLayout() {
           onClick={() => setMobileOpen(false)}
           className={({ isActive }) => clsx(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-            isActive ? activeBg : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            isActive ? 'bg-teal-400/10 text-teal-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'
           )}
         >
           <Settings size={18} />
@@ -149,7 +105,7 @@ export function AppLayout() {
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors"
           >
-            <div className={clsx('w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-gray-900 flex-shrink-0', accentBg)}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-gray-900 flex-shrink-0 bg-teal-400">
               {profile?.full_name?.[0]?.toUpperCase() ?? profile?.email?.[0]?.toUpperCase() ?? 'U'}
             </div>
             <div className="flex-1 min-w-0 text-left">
@@ -173,7 +129,7 @@ export function AppLayout() {
   )
 
   return (
-    <div className={clsx('flex h-screen overflow-hidden', quarantineMode && 'quarantine-mode')}>
+    <div className="flex h-screen overflow-hidden">
       <div className="hidden md:flex flex-shrink-0">{sidebar}</div>
 
       {mobileOpen && (
@@ -184,16 +140,11 @@ export function AppLayout() {
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className={clsx(
-          'md:hidden flex items-center justify-between px-4 py-3 border-b',
-          quarantineMode ? 'bg-orange-950 border-orange-900' : 'bg-white border-gray-100'
-        )}>
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-white border-gray-100">
           <button onClick={() => setMobileOpen(true)}>
-            <Menu size={22} className={quarantineMode ? 'text-orange-300' : 'text-gray-600'} />
+            <Menu size={22} className="text-gray-600" />
           </button>
-          <span className={clsx('font-mono font-medium text-sm', quarantineMode ? 'text-orange-300' : 'text-gray-900')}>
-            {quarantineMode ? 'QuarantineIQ' : 'Rescue.IO'}
-          </span>
+          <span className="font-mono font-medium text-sm text-gray-900">ShelterIQ</span>
           <div className="w-6" />
         </div>
 

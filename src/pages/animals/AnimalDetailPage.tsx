@@ -23,7 +23,7 @@ export function AnimalDetailPage() {
     queryKey: ['animal', id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('animals')
+        .from('shelteriq_animals')
         .select('*')
         .eq('id', id!)
         .eq('org_id', org!.id)
@@ -78,7 +78,7 @@ export function AnimalDetailPage() {
     queryKey: ['medications', id],
     queryFn: async () => {
       const { data } = await supabase
-        .from('medications')
+        .from('shelteriq_medications')
         .select('*')
         .eq('animal_id', id!)
         .order('active', { ascending: false })
@@ -88,7 +88,7 @@ export function AnimalDetailPage() {
   })
 
   async function updateStatus(status: string) {
-    await supabase.from('animals').update({ status }).eq('id', id!)
+    await supabase.from('shelteriq_animals').update({ status }).eq('id', id!)
     queryClient.invalidateQueries({ queryKey: ['animal', id] })
     queryClient.invalidateQueries({ queryKey: ['animals'] })
   }
@@ -133,7 +133,6 @@ export function AnimalDetailPage() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-start gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="btn-ghost px-2 mt-0.5">
           <ChevronLeft size={18} />
@@ -160,11 +159,10 @@ export function AnimalDetailPage() {
         <PhotoUpload animalId={animal.id} onUploaded={refetchPhotos} compact />
       </div>
 
-      {/* Quick status */}
       <div className="card mb-5 p-4">
         <p className="section-title">Update status</p>
         <div className="flex flex-wrap gap-2">
-          {(['available', 'hold', 'medical', 'quarantine', 'fostered', 'transferred', 'adopted'] as const).map(s => (
+          {(['available', 'hold', 'medical', 'fostered', 'transferred', 'adopted'] as const).map(s => (
             <button
               key={s}
               onClick={() => updateStatus(s)}
@@ -180,7 +178,6 @@ export function AnimalDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-0.5 mb-5 border-b border-gray-100 overflow-x-auto">
         {tabs.map(t => (
           <button
@@ -195,7 +192,6 @@ export function AnimalDetailPage() {
         ))}
       </div>
 
-      {/* Overview */}
       {tab === 'overview' && (
         <div className="grid md:grid-cols-2 gap-5">
           <div className="card space-y-2">
@@ -230,7 +226,6 @@ export function AnimalDetailPage() {
         </div>
       )}
 
-      {/* Photos */}
       {tab === 'photos' && (
         <div className="space-y-5 max-w-lg">
           <PhotoGallery photos={photos} onSetPrimary={setPrimaryPhoto} onDelete={deletePhoto} />
@@ -238,7 +233,6 @@ export function AnimalDetailPage() {
         </div>
       )}
 
-      {/* Observations */}
       {tab === 'observations' && (
         <div className="max-w-xl">
           {!showObsForm ? (
@@ -274,7 +268,6 @@ export function AnimalDetailPage() {
         </div>
       )}
 
-      {/* Medical */}
       {tab === 'medical' && (
         <div>
           <div className="flex justify-between mb-4">
@@ -305,7 +298,6 @@ export function AnimalDetailPage() {
         </div>
       )}
 
-      {/* Medications */}
       {tab === 'medications' && (
         <div>
           <div className="flex justify-between mb-4">
